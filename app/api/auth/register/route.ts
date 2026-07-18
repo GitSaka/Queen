@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { hashPassword, generateToken } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
+
 const registerSchema = z.object({
   firstName: z.string().min(2, 'Le prénom doit contenir au moins 2 caractères.'),
   email: z.string().email('Adresse email invalide.').optional(),
