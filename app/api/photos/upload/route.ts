@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/getAuthUser';
 import cloudinary from '@/lib/cloudinary';
 
+export const dynamic = 'force-dynamic';
+
+
 export async function POST(request: Request) {
   const auth = getAuthUser(request);
   if (!auth) {

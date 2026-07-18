@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/getAuthUser';
 
+export const dynamic = 'force-dynamic';
+
+
 export async function GET(request: Request) {
   const auth = getAuthUser(request);
   if (!auth) {

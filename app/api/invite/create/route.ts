@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken'; // 💡 Assurez-vous d'avoir importé votre outi
 
 const prisma = new PrismaClient();
 
+export const dynamic = 'force-dynamic';
+
+
 export async function POST(request: Request) {
   try {
     // 1. Récupération et décodage du vrai Token d'authentification

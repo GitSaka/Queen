@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/getAuthUser';
 
+export const dynamic = 'force-dynamic';
+
+
 async function assertParticipant(matchId: string, userId: string) {
   const match = await prisma.match.findUnique({ where: { id: matchId } });
   if (!match || !match.isActive) return null;
