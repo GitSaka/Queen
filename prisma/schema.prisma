@@ -1,0 +1,405 @@
+// ============================================
+// SCHEMA PRISMA — APP DE RENCONTRE
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Gender {
+  HOMME
+  FEMME
+  AUTRE
+}
+
+enum RelationshipGoal {
+  RELATION_SERIEUSE
+  RENCONTRE_CASUAL
+  AMITIE
+  PAS_SUR_ENCORE
+}
+
+enum VerificationStatus {
+  NON_VERIFIE
+  EN_ATTENTE
+  VERIFIE
+  REJETE
+}
+
+enum SubscriptionPlan {
+  GRATUIT
+  PREMIUM
+  PREMIUM_PLUS
+}
+
+enum ReportReason {
+  FAUX_PROFIL
+  CONTENU_INAPPROPRIE
+  HARCELEMENT
+  ARNAQUE
+  MINEUR
+  AUTRE
+}
+
+enum ReportStatus {
+  EN_ATTENTE
+  EXAMINE
+  RESOLU
+  REJETE
+}
+
+enum MessageType {
+  TEXTE
+  IMAGE
+  AUDIO
+}
+
+// ============================================
+// UTILISATEUR
+// ============================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String?  @unique
+  phone         String?  @unique
+  passwordHash  String?
+  role          UserRole @default(UTILISATEUR)
+  creditsBalance Int     @default(0)
+  isOpenToDirectMessages Boolean @default(false)
+
+  // Infos de profil
+  firstName     String
+  lastName      String?
+  birthDate     DateTime
+  gender        Gender
+  bio           String?  @db.Text
+  profession    String?
+  education     String?  // parcours / niveau d'études
+  lookingFor    RelationshipGoal?
+  smokingHabit  SmokingHabit?
+  drinkingHabit DrinkingHabit?
+  childrenStatus ChildrenStatus?
+  religion      String?
+  city          String
+  latitude      Float?
+  longitude     Float?
+
+  // Statut du compte
+  isActive      Boolean  @default(true)
+  isBanned      Boolean  @default(false)
+  isOnline      Boolean  @default(false)
+  lastActiveAt  DateTime @default(now())
+  
+
+  // Vérification d'identité
+  verificationStatus VerificationStatus @default(NON_VERIFIE)
+  verificationSelfieUrl String?
+
+  // Préférences de découverte
+  preferences   UserPreference?
+
+  // Relations
+  photos        Photo[]
+  interests     UserInterest[]
+  promptAnswers UserPromptAnswer[]
+
+  sentLikes     Like[]     @relation("LikesSent")
+  receivedLikes Like[]     @relation("LikesReceived")
+
+  matchesA      Match[]    @relation("MatchUserA")
+  matchesB      Match[]    @relation("MatchUserB")
+
+  sentMessages  Message[]  @relation("MessagesSent")
+
+  reportsMade   Report[]   @relation("ReportsMade")
+  reportsAgainst Report[]  @relation("ReportsAgainst")
+
+  blocksMade    Block[]    @relation("BlocksMade")
+  blockedBy     Block[]    @relation("BlockedBy")
+
+  subscription  Subscription?
+
+  boosts        Boost[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions  Transaction[]
+
+  @@index([city])
+  @@index([latitude, longitude])
+}
+
+// ============================================
+// PROMPTS DE PROFIL (questions-réponses type Hinge)
+// ============================================
+
+model Prompt {
+  id        String              @id @default(cuid())
+  question  String              @unique
+  isActive  Boolean             @default(true)
+  answers   UserPromptAnswer[]
+  createdAt DateTime            @default(now())
+}
+
+model UserPromptAnswer {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptId  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, promptId])
+  @@index([userId])
+}
+
+// Préférences de recherche/matching
+model UserPreference {
+  id                  String   @id @default(cuid())
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String   @unique
+
+  interestedInGender  Gender[]
+  minAge              Int      @default(18)
+  maxAge              Int      @default(99)
+  maxDistanceKm       Int      @default(50)
+  relationshipGoal    RelationshipGoal?
+  showMeOnApp         Boolean  @default(true) // mode invisible si false
+
+  
+  updatedAt           DateTime @updatedAt
+}
+
+// Photos de profil (galerie ordonnée)
+model Photo {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  url         String
+  order       Int      @default(0)
+  isMain      Boolean  @default(false)
+  isVerified  Boolean  @default(false) // passée par la modération IA
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Centres d'intérêt (tags)
+model Interest {
+  id      String         @id @default(cuid())
+  name    String         @unique
+  users   UserInterest[]
+}
+
+model UserInterest {
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  interest   Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  interestId String
+
+  @@id([userId, interestId])
+}
+
+// ============================================
+// MATCHING
+// ============================================
+
+// Like / Swipe (avant match)
+model Like {
+  id          String   @id @default(cuid())
+  fromUser    User     @relation("LikesSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  fromUserId  String
+  toUser      User     @relation("LikesReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  toUserId    String
+  isSuperLike Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId])
+}
+
+
+// ============================================
+// MESSAGERIE
+// ============================================
+
+model Message {
+  id          String      @id @default(cuid())
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId     String
+  sender      User        @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId    String
+  type        MessageType @default(TEXTE)
+  content     String      @db.Text
+  isRead        Boolean     @default(false)
+  isEphemeral   Boolean     @default(false) // le message disparaît après lecture
+  expiresInSec  Int?                        // durée d'affichage en secondes si éphémère
+  createdAt     DateTime    @default(now())
+
+  @@index([matchId])
+}
+
+// ============================================
+// MODÉRATION & SÉCURITÉ
+// ============================================
+
+model Report {
+  id            String       @id @default(cuid())
+  reportedBy    User         @relation("ReportsMade", fields: [reportedById], references: [id], onDelete: Cascade)
+  reportedById  String
+  reportedUser  User         @relation("ReportsAgainst", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reportedUserId String
+  reason        ReportReason
+  description   String?      @db.Text
+  status        ReportStatus @default(EN_ATTENTE)
+  createdAt     DateTime     @default(now())
+
+  @@index([reportedUserId])
+}
+
+model Block {
+  id            String   @id @default(cuid())
+  blockedBy     User     @relation("BlocksMade", fields: [blockedById], references: [id], onDelete: Cascade)
+  blockedById   String
+  blockedUser   User     @relation("BlockedBy", fields: [blockedUserId], references: [id], onDelete: Cascade)
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  @@unique([blockedById, blockedUserId])
+}
+
+// ============================================
+// MONÉTISATION
+// ============================================
+
+model Subscription {
+  id            String           @id @default(cuid())
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String           @unique
+  plan          SubscriptionPlan @default(GRATUIT)
+  startedAt     DateTime         @default(now())
+  expiresAt     DateTime?
+  autoRenew     Boolean          @default(false)
+  paymentProvider String?        // Stripe, Mobile Money, etc.
+  externalRef   String?          // ID de transaction externe
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Boost de profil (mise en avant temporaire, payant)
+model Boost {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  startedAt   DateTime @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum TransactionStatus {
+  EN_ATTENTE
+  SUCCES
+  ECHEC
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  amount        Float             // montant réel payé
+  creditsEarned Int               // crédits ajoutés sur l'app (boosts, super likes, premium)
+  provider      String            // "ORANGE", "MTN", "WAVE", "STRIPE"
+  reference     String            @unique
+  status        TransactionStatus @default(EN_ATTENTE)
+  createdAt     DateTime          @default(now())
+
+  @@index([userId])
+}
+
+// ============================================
+// MATCHING (Mis à jour pour la V1)
+// ============================================
+
+model Match {
+  id          String   @id @default(cuid())
+  
+  // Relations existantes et intactes avec l'utilisateur
+  userA       User     @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userAId     String
+  userB       User     @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  userBId     String
+  
+  matchedAt   DateTime @default(now())
+  isActive    Boolean  @default(true) // false si un des deux "unmatch"
+
+  // Relation existante avec les messages
+  messages    Message[]
+  source      MatchSource @default(LIKE_MUTUEL)
+
+  // 🔒 NOUVEAUX CHAMPS COMPATIBLES POUR VOS RENDREZ-VOUS DIRECTS SANS IA
+  isInvitation     Boolean       @default(false)     // Passe à true si l'homme invite direct depuis le profil
+  restaurantName   String?                           // Ex: "Glacier de la Paix"
+  restaurantPrice  Float?                            // Ex: 3000
+  inviteIntent     InviteIntent?                     // AMICAL ou SEXUEL
+  inviteStatus     InviteStatus  @default(EN_ATTENTE) // EN_ATTENTE, ACCEPTE, REFUSE
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+enum UserRole {
+  UTILISATEUR
+  MODERATEUR
+  ADMIN
+}
+
+enum MatchSource {
+  LIKE_MUTUEL
+  MESSAGE_DIRECT
+}
+
+enum SmokingHabit {
+  NE_FUME_PAS
+  FUMEUR_OCCASIONNEL
+  FUMEUR_REGULIER
+}
+
+enum DrinkingHabit {
+  NE_BOIT_PAS
+  BUVEUR_OCCASIONNEL
+  BUVEUR_REGULIER
+}
+
+enum ChildrenStatus {
+  PAS_D_ENFANTS
+  A_DES_ENFANTS
+  PREFERE_NE_PAS_DIRE
+}
+
+enum InviteIntent {
+  AMICAL
+  SEXUEL
+}
+
+enum InviteStatus {
+  EN_ATTENTE
+  ACCEPTE
+  REFUSE
+}

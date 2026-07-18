@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #150E1B;
+  --card-bg: #201530;
+  --card-2-bg: #2A1B3D;
+  --coral-val: #FF5468;
+  --amber-val: #FFB648;
+  --emerald-val: #1F6F6B;
+  --cream-val: #F3ECE4;
+  --muted-val: #9A8FA8;
+
+  --background: var(--ink);
+  --foreground: var(--cream-val);
 }
 
 @theme inline {
+  --color-ink: var(--ink);
+  --color-card: var(--card-bg);
+  --color-card-2: var(--card-2-bg);
+  --color-coral: var(--coral-val);
+  --color-amber: var(--amber-val);
+  --color-emerald: var(--emerald-val);
+  --color-cream: var(--cream-val);
+  --color-muted: var(--muted-val);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 6s linear infinite;
+}
+
+/* =================================================================
+   🔥 MASQUER LES BARRES DE DÉFILEMENT PARTOUT (Style App Native)
+   ================================================================= */
+@layer base {
+  /* Pour Chrome, Safari, Opera et l'affichage natif Android/iOS sur Capacitor */
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /* Pour Firefox */
+  html, body, main, div {
+    scrollbar-width: none !important;
+  }
+
+  /* Pour Internet Explorer et Edge */
+  html, body, main, div {
+    -ms-overflow-style: none !important;
+  }
 }
