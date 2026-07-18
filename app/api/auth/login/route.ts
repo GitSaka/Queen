@@ -7,6 +7,7 @@ const loginSchema = z.object({
   identifier: z.string(),
   password: z.string(),
 });
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
