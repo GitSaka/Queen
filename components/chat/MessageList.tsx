@@ -24,12 +24,24 @@ type FullscreenState = {
 
 export default function MessageList({ messages, loading, myUserId }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-  
-  // 🔒 LOGIQUE COMPOSITE : Gère le tableau des images du message et l'index de celle qui est affichée
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wasNearBottomRef = useRef(true);
+
   const [lightbox, setLightbox] = useState<FullscreenState>(null);
 
+  // Mémorise si l'utilisateur est proche du bas avant que les messages changent
+  function checkIfNearBottom() {
+    const el = containerRef.current;
+    if (!el) return;
+    const threshold = 100; // tolérance en pixels
+    wasNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  }
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Ne défile automatiquement que si l'utilisateur était déjà proche du bas
+    if (wasNearBottomRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   // Fonctions de navigation pour glisser d'une photo à l'autre
@@ -50,7 +62,11 @@ export default function MessageList({ messages, loading, myUserId }: MessageList
   };
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 flex flex-col gap-3 min-w-0 relative">
+    <div
+      ref={containerRef}
+      onScroll={checkIfNearBottom}
+      className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 flex flex-col gap-3 min-w-0 relative"
+    >
       
       {loading && <p className="text-muted text-center text-base mt-10 animate-pulse">Chargement...</p>}
 
