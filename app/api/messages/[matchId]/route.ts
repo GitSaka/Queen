@@ -55,13 +55,13 @@ export async function POST(
     return NextResponse.json({ error: 'Accès refusé à cette conversation.' }, { status: 403 });
   }
 
-  const { content } = await request.json();
+  const { content, type } = await request.json();
   if (!content || !content.trim()) {
     return NextResponse.json({ error: 'Message vide.' }, { status: 400 });
   }
 
   const message = await prisma.message.create({
-    data: { matchId, senderId: auth.userId, content: content.trim() },
+    data: { matchId, senderId: auth.userId, content: content.trim(), type: type || 'TEXTE' },
   });
 
   return NextResponse.json({ message }, { status: 201 });

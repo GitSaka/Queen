@@ -1,11 +1,20 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MockMessage, MY_USER_ID } from '@/lib/mockMessages';
+
+
+type Message = {
+  id: string;
+  content: string;
+  senderId: string;
+  type: 'TEXTE' | 'IMAGE' | 'AUDIO' | 'VIDEO';
+  createdAt: string;
+};
 
 interface MessageListProps {
-  messages: MockMessage[];
+  messages: Message[];
   loading: boolean;
+  myUserId: string | null;
 }
 
 type FullscreenState = {
@@ -13,7 +22,7 @@ type FullscreenState = {
   currentIndex: number;
 } | null;
 
-export default function MessageList({ messages, loading }: MessageListProps) {
+export default function MessageList({ messages, loading, myUserId }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   
   // 🔒 LOGIQUE COMPOSITE : Gère le tableau des images du message et l'index de celle qui est affichée
@@ -52,7 +61,7 @@ export default function MessageList({ messages, loading }: MessageListProps) {
       )}
 
       {messages.map((m) => {
-        const isMine = m.senderId === MY_USER_ID;
+        const isMine = m.senderId === myUserId;
         const isTextOrAudio = m.type === 'TEXTE' || m.type === 'AUDIO';
         
         // Extraction et nettoyage des URLs multiples séparées par une virgule

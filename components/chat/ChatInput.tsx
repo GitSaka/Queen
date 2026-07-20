@@ -10,7 +10,6 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Agrandissement automatique du champ de texte jusqu'à 140px max
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -24,26 +23,9 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    
+
     onSendMessage(input, 'TEXTE');
     setInput('');
-  };
-
-  // Fonction de test pour simuler l'envoi de médias fictifs au clic sur "＋"
-  const handleAddMedia = () => {
-    const action = prompt("Entrez 1 pour envoyer une Fausse Photo\nEntrez 2 pour envoyer une Fausse Note Vocale");
-    
-    if (action === '1') {
-      onSendMessage(
-        "https://unsplash.com", 
-        "IMAGE"
-      );
-    } else if (action === '2') {
-      onSendMessage(
-        "https://soundhelix.com", 
-        "AUDIO"
-      );
-    }
   };
 
   return (
@@ -51,16 +33,6 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
       onSubmit={handleSubmit}
       className="flex items-end gap-2 px-4 pb-4 pt-2 border-t border-white/5 flex-shrink-0"
     >
-      {/* 📎 BOUTON MULTIMÉDIA "＋" */}
-      <button
-        type="button"
-        onClick={handleAddMedia}
-        className="w-12 h-12 rounded-full flex items-center justify-center bg-card border border-white/10 text-cream text-xl cursor-pointer hover:bg-card-2 flex-shrink-0 transition-colors"
-        aria-label="Ajouter un média"
-      >
-        ＋
-      </button>
-
       <textarea
         ref={textareaRef}
         value={input}
